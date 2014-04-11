@@ -137,7 +137,7 @@ object Lab6 extends jsy.util.JsyApplication {
     }
 
     def not(next: Input): ParseResult[RegExpr] = star(next) match {
-      case _ => throw new UnsupportedOperationException
+      case Success(r, next) => RStar(r);
     }
 
     def star(next: Input): ParseResult[RegExpr] = atom(next) match{
@@ -157,8 +157,9 @@ object Lab6 extends jsy.util.JsyApplication {
               case Success(r, next) => stars(RStar(acc), next)
               case _ => Failure("expected atom", next)
             }
-            case _ => Success(acc, next)
+            case _ => Failure("expect atom", next)
           }
+        stars(r, next)
       }
       case _ => Failure("expect atom", next)
     }
