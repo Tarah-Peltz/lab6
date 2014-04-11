@@ -76,28 +76,69 @@ object Lab6 extends jsy.util.JsyApplication {
      */
     
     def re(next: Input): ParseResult[RegExpr] = union(next)
-
+    // union ::= intersect { ‘|’ intersect }
     def union(next: Input): ParseResult[RegExpr] = intersect(next) match {
+      //success
       case Success(r, next) => {
+        // unions ::= eps | intersect '|' unions
         def unions(acc: RegExpr, next: Input): ParseResult[RegExpr] =
+          // matches eps (empty and successful
           if (next.atEnd) Success(acc, next)
+          //pattern match
           else (next.first, next.rest) match {
+            //the first character is a bar
             case ('|', next) => intersect(next) match {
               case Success(r, next) => unions(RUnion(acc, r), next)
               case _ => Failure("expected intersect", next)
             }
+            //matches the intersect '|' eps
             case _ => Success(acc, next)
           }
         unions(r, next)
       }
+      //failure
       case _ => Failure("expected intersect", next)
     }
 
-    def intersect(next: Input): ParseResult[RegExpr] = throw new UnsupportedOperationException
+    def intersect(next: Input): ParseResult[RegExpr] = concat(next) match{
+      case Success(r, next) => {
+        def intersections(acc: RegExpr, next: Input): ParseResult[RegExpr] =
+          if (next.atEnd) Success(acc, next)
+          else (next.first, next.rest) match {
+            case ('&', next) => concat(next) match {
+              case Success(r, next) => intersections(RIntersect(acc,r), next)
+              case _ => Failure("expected concat", next)
+            }
+            case _ => Success(acc, next)
+          }
+        intersections(r, next)
+      }
+      //failure
+      case _ => Failure("expected concat", next)
+    }
 
-    def concat(next: Input): ParseResult[RegExpr] = throw new UnsupportedOperationException
+    // concat ::= not concats
+    // concats ::= eps | not concats
+    def concat(next: Input): ParseResult[RegExpr] = not(next) match{
+      case Success(r, next) => {
+        def concats(acc: RegExpr, next: Input): ParseResult[RegExpr] =
+          if (next.atEnd) Success(acc, next)
+          else (next.rest) match {
+            case (next) => not(next) match {
+              case Success(r, next) => concats(RConcat(acc, r),next)
+              case _ => Failure("expected not", next)
+            }
+            case _ => Failure("expect not", next)
+          }
+        concats(r, next)
+      }
+      //failure
+      case _ => Failure("expected not", next)
+    }
 
-    def not(next: Input): ParseResult[RegExpr] = throw new UnsupportedOperationException
+    def not(next: Input): ParseResult[RegExpr] = star(next) match {
+      case Success(r, next) => 
+    }
 
     def star(next: Input): ParseResult[RegExpr] = throw new UnsupportedOperationException
 
@@ -123,6 +164,10 @@ object Lab6 extends jsy.util.JsyApplication {
   /*** Regular Expression Matching ***/
   
   def retest(re: RegExpr, s: String): Boolean = {
+    //sc is a list of characters to match on
+    //sc is a function type from List[Char] to Booleans
+    //a continuation is a callback for a later recursive call
+    //when making a recursive function, the sc code is the callback to the original function
     def test(re: RegExpr, chars: List[Char], sc: List[Char] => Boolean): Boolean = (re, chars) match {
       /* Basic Operators */
       case (RNoString, _) => throw new UnsupportedOperationException
