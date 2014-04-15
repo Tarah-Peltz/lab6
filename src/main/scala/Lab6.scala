@@ -136,8 +136,12 @@ object Lab6 extends jsy.util.JsyApplication {
       case _ => Failure("expected not", next)
     }
 
-    def not(next: Input): ParseResult[RegExpr] = star(next) match {
-      case Success(r, next) => RStar(r);
+     def not(next: Input): ParseResult[RegExpr] = (next.first,next.rest) match {
+      case ('~',rest) => not(rest) match {
+        case Success(r,next) => Success(RNeg(r),next)
+        case _ => Failure("expected something",next)
+      }
+      case _ => star(next)
     }
 
     def star(next: Input): ParseResult[RegExpr] = atom(next) match{
@@ -168,13 +172,23 @@ object Lab6 extends jsy.util.JsyApplication {
        meta-language character.  Use delimiters.contains(c) for a Char c. */
     val delimiters = Set('|', '&', '~', '*', '+', '?', '!', '#', '.', '(', ')')
 
-    def atom(next: Input): ParseResult[RegExpr] = next.first match {
+    def atom(next: Input): ParseResult[RegExpr] = {
+      if(next.atEnd) Failure("expected terminal symbol", next)
+      next.first match {
       case '!' => Success(RNoString,next.rest)
       case '#' => Success(REmptyString,next.rest)
       case '.' => Success(RAnyChar,next.rest)
+      case '(' => re(next.rest) match
+      {
+        case Success(r, next) if(next.atEnd) => (next.first, next.rest) match {
+          case (')', next) => Success(r,next)
+          case _ => Failure("expected )", next)
+        }
+        case fail => fail
+      }
       case c if (!delimiters.contains(c)) => Success(RSingle(c),next.rest)
-//      case '(' => re(next.rest.toString())
-//      case ')' => Success(test,next.rest)
+      case _ => Failure("expected intersect", next)
+      }
     }
     
 
@@ -201,11 +215,14 @@ object Lab6 extends jsy.util.JsyApplication {
       /* Basic Operators */
       case (RNoString, _) => false
       case (REmptyString, _) => sc(chars)
-      case (RSingle(_), Nil) => throw new UnsupportedOperationException
+      case (RSingle(_), Nil) => false //?
       case (RSingle(c1), c2 :: t) => throw new UnsupportedOperationException
       case (RConcat(re1, re2), _) => throw new UnsupportedOperationException
       case (RUnion(re1, re2), _) => throw new UnsupportedOperationException
-      case (RStar(re1), _) => throw new UnsupportedOperationException
+      case (RStar(re1), _) => test(re1,chars, ch => ch match {
+        case c1 :: t if (c1 == '*') => sc(t)
+        case _ => false
+      })
 
       /* Extended Operators */
       case (RAnyChar, Nil) => false
