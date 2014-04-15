@@ -168,7 +168,14 @@ object Lab6 extends jsy.util.JsyApplication {
        meta-language character.  Use delimiters.contains(c) for a Char c. */
     val delimiters = Set('|', '&', '~', '*', '+', '?', '!', '#', '.', '(', ')')
 
-    def atom(next: Input): ParseResult[RegExpr] = throw new UnsupportedOperationException
+    def atom(next: Input): ParseResult[RegExpr] = next.first match {
+      case '!' => Success(RNoString,next.rest)
+      case '#' => Success(REmptyString,next.rest)
+      case '.' => Success(RAnyChar,next.rest)
+      case c if (!delimiters.contains(c)) => Success(RSingle(c),next.rest)
+//      case '(' => re(next.rest.toString())
+//      case ')' => Success(test,next.rest)
+    }
     
 
     /* External Interface */
@@ -192,8 +199,8 @@ object Lab6 extends jsy.util.JsyApplication {
     //when making a recursive function, the sc code is the callback to the original function
     def test(re: RegExpr, chars: List[Char], sc: List[Char] => Boolean): Boolean = (re, chars) match {
       /* Basic Operators */
-      case (RNoString, _) => throw new UnsupportedOperationException
-      case (REmptyString, _) => throw new UnsupportedOperationException
+      case (RNoString, _) => false
+      case (REmptyString, _) => sc(chars)
       case (RSingle(_), Nil) => throw new UnsupportedOperationException
       case (RSingle(c1), c2 :: t) => throw new UnsupportedOperationException
       case (RConcat(re1, re2), _) => throw new UnsupportedOperationException
