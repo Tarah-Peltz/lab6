@@ -98,7 +98,7 @@ class Lab6Spec extends FlatSpec {
 
   
   
-  //failing
+  //passing
   "retest/respecs2" should "should perform regular expression matching" in {
     for ((_,re) <- respecsast(2)) {
       for (s <- strings) assertRefRetest(re, s)

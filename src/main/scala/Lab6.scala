@@ -220,6 +220,9 @@ object Lab6 extends jsy.util.JsyApplication {
 
   /*** Regular Expression Matching ***/
   
+  //continuations capture what to be called later. It is a callback for your future reference.
+  //they are useful when doing a backtracking search
+  //they save computation on the chance failure means said computation doesn't need to be done.
   def retest(re: RegExpr, s: String): Boolean = {
     println("re: " + re.toString() + ", s: " + s)
     def test(re: RegExpr, chars: List[Char], sc: List[Char] => Boolean): Boolean = (re, chars) match {
@@ -235,18 +238,19 @@ object Lab6 extends jsy.util.JsyApplication {
         sc(chars) || 
         //chars.forall( c => test(RStar(re1), c::Nil, sc))
         //test(re1, chars, {remchars => test(RStar(re1), remchars, sc)})
-        test(re1, chars, {remchars => remchars.forall{ c => test(RStar(re1), c::Nil, sc)} })
+        test(re1, chars, {remchars => if (remchars.size >= chars.size) false else test(RStar(re1), remchars, sc)})
       }
 
       /* Extended Operators */
       case (RAnyChar, Nil) => false
       case (RAnyChar, _ :: t) => sc(t)
-      case (RPlus(re1), _) => test(re1, chars, {remchars => remchars.forall{ c => test(RStar(re1), c::Nil, sc)} })//chars.forall( c => test(re1, c::Nil, sc))
+      case (RPlus(re1), _) => test(RConcat(re1, RStar(re1)), chars, sc) //chang reccomended solution
+      //case (RPlus(re1), _) => test(re1, chars, {remchars => remchars.forall{ c => test(RStar(re1), c::Nil, sc)} })//chars.forall( c => test(re1, c::Nil, sc))
       case (ROption(re1), _) => if (chars.isEmpty) true else test(re1, chars, sc)
 
       /***** Extra Credit Cases *****/
       case (RIntersect(re1, re2), _) => test(re1, chars, sc) && test(re2, chars, sc)
-      case (RNeg(re1), _) =>  test(re1, chars, sc)//defs not correct
+      case (RNeg(re1), _) =>  !test(re1, chars, sc)//defs not correct
     }
     test(re, s.toList, { chars => chars.isEmpty })
   }
