@@ -7,10 +7,10 @@ object Lab6 extends jsy.util.JsyApplication {
   /*
    * lower in the parse tree, higher in precedence. 
    * CSCI 3155: Lab 6
-   * <Alexander Tsankov>
+   * <Samuel Volin>
    * 
-   * Partner: <Your Partner's Name>
-   * Collaborators: <Any Collaborators>
+   * Partner: <Cris Salazar>
+   * Collaborators: <Alex Tsankov>
    */
 
   /*
@@ -75,7 +75,7 @@ object Lab6 extends jsy.util.JsyApplication {
      * case class Success[+T](result: T, next: Input) extends ParseResult[T]
      * case class Failure(next: Input) extends ParseResult[Nothing]
      */
-    
+    //re simply calls union on the regular expression
     def re(next: Input): ParseResult[RegExpr] = union(next)
 
     def union(next: Input): ParseResult[RegExpr] = {
@@ -150,7 +150,7 @@ object Lab6 extends jsy.util.JsyApplication {
     	case ('~', rest) => not(rest) match{
     	  //run not on the rest if there is a neg
         	case Success(r, next) => Success(RNeg(r), next)
-        	//if we are succesfull, return a success
+        	//if we are succesful, return a success
         	case fail => fail
         	//otherwise fail
     	}
@@ -169,13 +169,13 @@ object Lab6 extends jsy.util.JsyApplication {
           if (next.atEnd) Success(acc, next)
           //check if next is the end 
           else (next.first, next.rest) match {
-            //elese, check if there are any of the symbols we should have 
+            //else, check if there are any of the symbols we should have 
           	case ('+', next) => stars(RPlus(acc), next) 
           	case ('*', next) => stars(RStar(acc),next)
           	case ('?', next) => stars(ROption(acc), next)
             //run stars on the modified version 
             case _ => Success(acc, next)
-            //otherwise we are successfull 
+            //otherwise we are successful
           }
         stars(r, next)
         //we need to run stars on 
@@ -227,12 +227,18 @@ object Lab6 extends jsy.util.JsyApplication {
     println("re: " + re.toString() + ", s: " + s)
     def test(re: RegExpr, chars: List[Char], sc: List[Char] => Boolean): Boolean = (re, chars) match {
       /* Basic Operators */
+      //No string should not match anything, at all!
       case (RNoString, _) => false
+      //emptystring matches # in the string. Check each character for the #
       case (REmptyString, _) => sc(chars)
+      //single should match any one character c. If no string was provided, return false
       case (RSingle(_), Nil) => false
+      //single should match a specific character c1. If the string begins with c2, compare c1 and c2.
+      //if c1 == c2, invoke the success continuation. Otherwise return false
       case (RSingle(c1), c2 :: t) => if (c1 == c2) sc(t) else false
-      //invokes a success continuation to iterate over 
+      //re1 and re2 should match, and they should match adjacent to each other 
       case (RConcat(re1, re2), _) => test(re1, chars, { remchars => test(re2, remchars, sc) })
+      //either re1 or re2 should match
       case (RUnion(re1, re2), _) => test(re1, chars, sc) || test(re2, chars, sc)
       case (RStar(re1), _) => {
         sc(chars) || 
